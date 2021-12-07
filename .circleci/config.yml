@@ -14,6 +14,8 @@ jobs:
       - checkout
       - run:
           name: Get GitHub API URL for Target Branch (if exists)
+          ## This will need to be updated for GitHub Authentication using a PAT or other methods to be able to call
+          ## the GitHub API for private repositories. This example is using a public repo and does not require the Auth
           command: |
             if [[ -n $CIRCLE_PULL_REQUEST ]]; then
               echo $CIRCLE_PULL_REQUEST
