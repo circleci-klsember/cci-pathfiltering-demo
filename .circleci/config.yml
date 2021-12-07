@@ -13,21 +13,27 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Get GitHub API URL for Target Branch
+          name: Get GitHub API URL for Target Branch (if exists)
           command: |
             if [[ -n $CIRCLE_PULL_REQUEST ]]; then
               echo $CIRCLE_PULL_REQUEST
               echo 'export GH_API_URL=$(echo $CIRCLE_PULL_REQUEST | sed "s|github.com/klsember/$CIRCLE_PROJECT_REPONAME/pull|api.github.com/repos/klsember/$CIRCLE_PROJECT_REPONAME/pulls|g")' >> $BASH_ENV
+            else
+              echo "There is no pull request associated with this commit"
             fi
       - run: 
           name: Confirming API is correct
           command: echo ${GH_API_URL}
       - run:
-          name: Extract Target Branch name as Env Variable
+          name: Extract Target Branch name or Use Current Branch Name as Env Variable 
           command: |
+            if [[ -n $CIRCLE_PULL_REQUEST ]]; then
               curl $GH_API_URL | jq '.base.ref' | tr -d '"' > Targetbranch.txt
               echo 'export TARGET_BRANCH=$(<Targetbranch.txt)' >> $BASH_ENV; source $BASH_ENV
               echo 'export BASE_REVISION=$TARGET_BRANCH' >> $BASH_ENV; source $BASH_ENV
+            else
+              echo 'export BASE_REVISION=$CIRCLE_BRANCH' >> $BASH_ENV; source $BASH_ENV
+            fi
       - run: 
           environment:
             MAPPING: |
