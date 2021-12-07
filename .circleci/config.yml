@@ -1,0 +1,62 @@
+version: 2.1
+
+setup: true
+
+orbs:
+  path-filtering: circleci/path-filtering@0.1.1
+
+jobs:
+  Get_Target_Branch:
+    docker:
+      - image: cimg/base:stable
+    resource_class: small
+    steps:
+      - run:
+          name: Get Target Branch
+          command: |
+            if [[ -n $CIRCLE_PULL_REQUEST ]]; then
+              echo $CIRCLE_PULL_REQUEST
+              echo 'export GH_API_URL=$(echo $CIRCLE_PULL_REQUEST | sed "s|github.com/klsember/$CIRCLE_PROJECT_REPONAME/pull|api.github.com/repos/klsember/$CIRCLE_PROJECT_REPONAME/pulls|g")' >> $BASH_ENV
+              source $BASH_ENV
+              curl $GH_API_URL | jq '.base.ref' | tr -d '"' > Targetbranch.txt
+              echo 'export TARGET_BRANCH=$(<Targetbranch.txt)' >> $BASH_ENV
+            fi
+      - run: echo ${GH_API_URL}
+      - run: echo ${TARGET_BRANCH}
+      
+workflows:
+  setup:
+    jobs:
+      - Get_Target_Branch:
+          context:
+            - GitHub
+      - path-filtering/filter:
+          name: main-filtering
+          base-revision: main
+          config-path: .circleci/dynamic_config.yml
+          mapping: |
+            api/.* run-api-workflow true
+            app/.* run-app-workflow true
+            auth/.* run-auth-workflow true
+            gateway/.* run-gateway-workflow true
+          requires:
+            - Get_Target_Branch
+          filters:
+            branches:
+              only:
+                - develop
+      - path-filtering/filter:
+          name: develop-filtering
+          base-revision: develop
+          config-path: .circleci/dynamic_config.yml
+          mapping: |
+            api/.* run-api-workflow true
+            app/.* run-app-workflow true
+            auth/.* run-auth-workflow true
+            gateway/.* run-gateway-workflow true
+          requires:
+            - Get_Target_Branch
+          filters:
+            branches:
+              only:
+                - /feature/.*/

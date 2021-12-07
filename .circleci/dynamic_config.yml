@@ -1,0 +1,76 @@
+version: 2.1
+
+parameters:
+  run-api-workflow:
+    type: boolean
+    default: false
+  run-app-workflow:
+    type: boolean
+    default: false
+  run-auth-workflow:
+    type: boolean
+    default: false
+  run-gateway-workflow:
+    type: boolean
+    default: false
+
+jobs:
+  common-pre:
+    docker:
+      - image: alpine
+    steps:
+      - run: echo 'Jobs with `common-` prefix are intended to be shared among modules'
+  api-build:
+    docker:
+      - image: alpine
+    steps:
+      - checkout
+      - run: echo 'Hello world from api package!'
+  app-build:
+    docker:
+      - image: alpine
+    steps:
+      - checkout
+      - run: echo 'Hello world from app package!'
+  auth-build:
+    docker:
+      - image: alpine
+    steps:
+      - checkout
+      - run: echo 'Hello world from auth package!'
+  gateway-build:
+    docker:
+      - image: alpine
+    steps:
+      - checkout
+      - run: echo 'Hello world from gateway package!'
+
+workflows:
+  api-workflow:
+    when: << pipeline.parameters.run-api-workflow >>
+    jobs:
+      - common-pre
+      - api-build:
+          requires:
+            - common-pre
+  auth-workflow:
+    when: << pipeline.parameters.run-auth-workflow >>
+    jobs:
+      - common-pre
+      - auth-build:
+          requires:
+            - common-pre
+  app-workflow:
+    when: << pipeline.parameters.run-app-workflow >>
+    jobs:
+      - common-pre
+      - app-build:
+          requires:
+            - common-pre
+  gateway-workflow:
+    when: << pipeline.parameters.run-gateway-workflow >>
+    jobs:
+      - common-pre
+      - gateway-build:
+          requires:
+            - common-pre
