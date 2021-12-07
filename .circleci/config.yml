@@ -13,20 +13,24 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Get Target Branch
+          name: Get GitHub API URL for Target Branch
           command: |
             if [[ -n $CIRCLE_PULL_REQUEST ]]; then
               echo $CIRCLE_PULL_REQUEST
               echo 'export GH_API_URL=$(echo $CIRCLE_PULL_REQUEST | sed "s|github.com/klsember/$CIRCLE_PROJECT_REPONAME/pull|api.github.com/repos/klsember/$CIRCLE_PROJECT_REPONAME/pulls|g")' >> $BASH_ENV
             fi
-      - run: echo ${GHAPI_URL}
       - run: 
+          name: Confirming API is correct
+          command: echo ${GH_API_URL}
+      - run:
+          name: Extract Target Branch name as Env Variable
           command: |
               curl $GH_API_URL | jq '.base.ref' | tr -d '"' > Targetbranch.txt
               echo 'export TARGET_BRANCH=$(<Targetbranch.txt)' >> $BASH_ENV; source $BASH_ENV
-      - run: echo 'export BASE_REVISION=$TARGET_BRANCH' >> $BASH_ENV
+              echo 'export BASE_REVISION=$TARGET_BRANCH' >> $BASH_ENV; source $BASH_ENV
       - run: 
-          name: Install pip
+          name: Install Pip
+          ## Ideally this would be set in a custom docker-image built off of the cimg/python:3.8 image to prevent downloading each run
           command: |
             sudo apt-get update
             sudo apt-get install python3-pip
@@ -39,8 +43,9 @@ jobs:
               auth/.* run-auth-workflow true
               gateway/.* run-gateway-workflow true
             OUTPUT_PATH: "/tmp/pipeline-parameters.json"
-          name: Set parameters
+          name: Set parameters for path-filtering and continuation
           shell: /usr/bin/env python3
+          ## This can be created in custom orb with addition of `load_env` to be able to dynamically pass the Target_Branch name to the python script
           command: |+
               #!/usr/bin/env python3
               import os
