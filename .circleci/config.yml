@@ -29,13 +29,6 @@ jobs:
               echo 'export TARGET_BRANCH=$(<Targetbranch.txt)' >> $BASH_ENV; source $BASH_ENV
               echo 'export BASE_REVISION=$TARGET_BRANCH' >> $BASH_ENV; source $BASH_ENV
       - run: 
-          name: Install Pip
-          ## Ideally this would be set in a custom docker-image built off of the cimg/python:3.8 image to prevent downloading each run
-          command: |
-            sudo apt-get update
-            sudo apt-get install python3-pip
-            pip3 install envbash
-      - run: 
           environment:
             MAPPING: |
               api/.* run-api-workflow true
@@ -44,8 +37,10 @@ jobs:
               gateway/.* run-gateway-workflow true
             OUTPUT_PATH: "/tmp/pipeline-parameters.json"
           name: Set parameters for path-filtering and continuation
-          ## This can be created in custom orb with addition of `load_env` to be able to dynamically pass the Target_Branch name to the python script
-          command: python3 ~/project/scripts/custom-pathfilter.py
+          ## This can be created in custom orb where TARGET_BRANCH is passed in when specifying BASH_ENV source
+          command: |
+            source $BASH_ENV
+            python3 ~/project/scripts/custom-pathfilter.py
               
       - continuation/continue:
           configuration_path: .circleci/dynamic_config.yml

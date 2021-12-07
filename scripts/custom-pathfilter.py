@@ -3,9 +3,6 @@ import os
 import subprocess
 import json
 import re
-from envbash import load_envbash
-
-load_envbash(os.environ.get('BASH_ENV'))
 def checkout(revision):
   """
   Helper function for checking out a branch
