@@ -44,9 +44,8 @@ jobs:
               gateway/.* run-gateway-workflow true
             OUTPUT_PATH: "/tmp/pipeline-parameters.json"
           name: Set parameters for path-filtering and continuation
-          shell: /usr/bin/env python3
           ## This can be created in custom orb with addition of `load_env` to be able to dynamically pass the Target_Branch name to the python script
-          command: ./scripts/custom-pathfilter.py
+          command: python3 ~/project/scripts/custom-pathfilter.py
               
       - continuation/continue:
           configuration_path: .circleci/dynamic_config.yml
