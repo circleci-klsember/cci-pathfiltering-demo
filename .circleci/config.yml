@@ -3,7 +3,7 @@ version: 2.1
 setup: true
 
 orbs:
-  path-filtering: circleci/path-filtering@0.1.1
+  continuation: circleci/continuation@0.2.0
 
 jobs:
   Get_Target_Branch:
@@ -11,52 +11,53 @@ jobs:
       - image: cimg/base:stable
     resource_class: small
     steps:
+      - checkout
       - run:
-          name: Get Target Branch
+          name: Get GitHub API URL for Target Branch (if exists)
+          ## This will need to be updated for GitHub Authentication using a PAT or other methods to be able to call
+          ## the GitHub API for private repositories. This example is using a public repo and does not require the Auth
           command: |
             if [[ -n $CIRCLE_PULL_REQUEST ]]; then
               echo $CIRCLE_PULL_REQUEST
-              echo 'export GH_API_URL=$(echo $CIRCLE_PULL_REQUEST | sed "s|github.com/klsember/$CIRCLE_PROJECT_REPONAME/pull|api.github.com/repos/klsember/$CIRCLE_PROJECT_REPONAME/pulls|g")' >> $BASH_ENV
-              source $BASH_ENV
-              curl $GH_API_URL | jq '.base.ref' | tr -d '"' > Targetbranch.txt
-              echo 'export TARGET_BRANCH=$(<Targetbranch.txt)' >> $BASH_ENV
+              echo 'export GH_API_URL=$(echo $CIRCLE_PULL_REQUEST | sed "s|github.com/circleci-klsember/$CIRCLE_PROJECT_REPONAME/pull|api.github.com/repos/circleci-klsember/$CIRCLE_PROJECT_REPONAME/pulls|g")' >> $BASH_ENV
+            else
+              echo "There is no pull request associated with this commit"
             fi
-      - run: echo ${GH_API_URL}
-      - run: echo ${TARGET_BRANCH}
-      
+      - run: 
+          name: Confirming API is correct
+          command: echo ${GH_API_URL}
+      - run:
+          name: Extract Target Branch name or Use Current Branch Name as Env Variable 
+          command: |
+            if [[ -n $CIRCLE_PULL_REQUEST ]]; then
+              curl $GH_API_URL | jq '.base.ref' | tr -d '"' > Targetbranch.txt
+              echo 'export TARGET_BRANCH=$(<Targetbranch.txt)' >> $BASH_ENV; source $BASH_ENV
+              echo 'export BASE_REVISION=$TARGET_BRANCH' >> $BASH_ENV; source $BASH_ENV
+            else
+              echo 'export BASE_REVISION=$CIRCLE_BRANCH' >> $BASH_ENV; source $BASH_ENV
+            fi
+      - run: 
+          environment:
+            MAPPING: |
+              api/.* run-api-workflow true
+              app/.* run-app-workflow true
+              auth/.* run-auth-workflow true
+              gateway/.* run-gateway-workflow true
+            OUTPUT_PATH: "/tmp/pipeline-parameters.json"
+          name: Set parameters for path-filtering and continuation
+          ## This can be created in custom orb where TARGET_BRANCH is passed in when specifying BASH_ENV source
+          command: |
+            source $BASH_ENV
+            python3 ~/project/scripts/custom-pathfilter.py
+              
+      - continuation/continue:
+          configuration_path: .circleci/dynamic_config.yml
+          circleci_domain: circleci.com
+          parameters: /tmp/pipeline-parameters.json
+    
 workflows:
   setup:
     jobs:
       - Get_Target_Branch:
           context:
             - GitHub
-      - path-filtering/filter:
-          name: main-filtering
-          base-revision: main
-          config-path: .circleci/dynamic_config.yml
-          mapping: |
-            api/.* run-api-workflow true
-            app/.* run-app-workflow true
-            auth/.* run-auth-workflow true
-            gateway/.* run-gateway-workflow true
-          requires:
-            - Get_Target_Branch
-          filters:
-            branches:
-              only:
-                - develop
-      - path-filtering/filter:
-          name: develop-filtering
-          base-revision: develop
-          config-path: .circleci/dynamic_config.yml
-          mapping: |
-            api/.* run-api-workflow true
-            app/.* run-app-workflow true
-            auth/.* run-auth-workflow true
-            gateway/.* run-gateway-workflow true
-          requires:
-            - Get_Target_Branch
-          filters:
-            branches:
-              only:
-                - /feature/.*/
