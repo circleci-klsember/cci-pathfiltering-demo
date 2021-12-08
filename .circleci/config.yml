@@ -19,7 +19,7 @@ jobs:
           command: |
             if [[ -n $CIRCLE_PULL_REQUEST ]]; then
               echo $CIRCLE_PULL_REQUEST
-              echo 'export GH_API_URL=$(echo $CIRCLE_PULL_REQUEST | sed "s|github.com/klsember/$CIRCLE_PROJECT_REPONAME/pull|api.github.com/repos/klsember/$CIRCLE_PROJECT_REPONAME/pulls|g")' >> $BASH_ENV
+              echo 'export GH_API_URL=$(echo $CIRCLE_PULL_REQUEST | sed "s|github.com/circleci-klsember/$CIRCLE_PROJECT_REPONAME/pull|api.github.com/repos/circleci-klsember/$CIRCLE_PROJECT_REPONAME/pulls|g")' >> $BASH_ENV
             else
               echo "There is no pull request associated with this commit"
             fi
