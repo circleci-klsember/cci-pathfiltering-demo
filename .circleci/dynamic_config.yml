@@ -27,16 +27,20 @@ jobs:
       - checkout
       - when:
           condition: <<parameters.run-api-workflow>>
-            - run: echo 'Hello world from api package!'
+            steps:
+              - run: echo 'Hello world from api package!'
       - when:
           condition: <<parameters.run-app-workflow>>
-            - run: echo 'Hello world from app package!'
+            steps:
+              - run: echo 'Hello world from app package!'
       - when:
           condition: <<parameters.run-auth-workflow>>
-            - run: echo 'Hello world from auth package!'
+            steps:
+              - run: echo 'Hello world from auth package!'
       - when:
           condition: <<parameters.run-gateway-workflow>>
-            - run: echo 'Hello world from gateway package!'
+            steps:
+              - run: echo 'Hello world from gateway package!'
 
 workflows:
   all-workflow:
