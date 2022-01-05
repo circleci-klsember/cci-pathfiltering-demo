@@ -17,60 +17,31 @@ parameters:
 jobs:
   common-pre:
     docker:
-      - image: alpine
+      - image: cimg/node:lts
     steps:
       - run: echo 'Jobs with `common-` prefix are intended to be shared among modules'
-  api-build:
+  building-all:
     docker:
-      - image: alpine
+      - image: cimg/node:lts
     steps:
       - checkout
-      - run: echo 'Hello world from api package!'
-  app-build:
-    docker:
-      - image: alpine
-    steps:
-      - checkout
-      - run: echo 'Hello world from app package!'
-  auth-build:
-    docker:
-      - image: alpine
-    steps:
-      - checkout
-      - run: echo 'Hello world from auth package!'
-  gateway-build:
-    docker:
-      - image: alpine
-    steps:
-      - checkout
-      - run: echo 'Hello world from gateway package!'
+      - when:
+          condition: <<parameters.run-api-workflow>>
+            - run: echo 'Hello world from api package!'
+      - when:
+          condition: <<parameters.run-app-workflow>>
+            - run: echo 'Hello world from app package!'
+      - when:
+          condition: <<parameters.run-auth-workflow>>
+            - run: echo 'Hello world from auth package!'
+      - when:
+          condition: <<parameters.run-gateway-workflow>>
+            - run: echo 'Hello world from gateway package!'
 
 workflows:
-  api-workflow:
-    when: << pipeline.parameters.run-api-workflow >>
+  all-workflow:
     jobs:
       - common-pre
-      - api-build:
-          requires:
-            - common-pre
-  auth-workflow:
-    when: << pipeline.parameters.run-auth-workflow >>
-    jobs:
-      - common-pre
-      - auth-build:
-          requires:
-            - common-pre
-  app-workflow:
-    when: << pipeline.parameters.run-app-workflow >>
-    jobs:
-      - common-pre
-      - app-build:
-          requires:
-            - common-pre
-  gateway-workflow:
-    when: << pipeline.parameters.run-gateway-workflow >>
-    jobs:
-      - common-pre
-      - gateway-build:
+      - building-all:
           requires:
             - common-pre
