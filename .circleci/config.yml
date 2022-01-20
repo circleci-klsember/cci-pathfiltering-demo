@@ -10,7 +10,7 @@ orbs:
 workflows:
   setup:
     jobs:
-      - path-filering/filter:
+      - path-filtering/filter:
           config-path: .circleci/dynamic_config.yml
           mapping: |
             api/.* run-api-workflow true
