@@ -12,6 +12,7 @@ workflows:
     jobs:
       - path-filtering/filter:
           config-path: .circleci/dynamic_config.yml
+          github_token: $GITHUB_ACCESS_TOKEN
           mapping: |
             api/.* run-api-workflow true
             app/.* run-app-workflow true
